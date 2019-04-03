@@ -10,14 +10,27 @@
 //This array is 0-indexed, so Board_Space[0] = Space 1 on the depiction of the board
 let Space = [];
 let playerPos = 0;
+let player2Pos = 0;
 let img = null;
+let img2 = null;
 let canvas = null;
 let gc = null;
+let playerName = null;
+let moveNumber = 0;
+
+//Server Setup
+let clientNum = null;
+let url = "ws://ec2-52-90-168-24.compute-1.amazonaws.com:8080";
+let connection = null;
 
 window.onload = function() {
-    //Set up the button
+    //Set up the buttons
     let rollButton = document.getElementById("roll_button");
+    let newGameButton = document.getElementById("new_game_button");
+    let submitNameButton = document.getElementById("submit_name_button");
     rollButton.onclick = rollDice;
+    newGameButton.onclick = newGame;
+    submitNameButton.onclick = submitName;
 
     //Loop through and create an object for each board space so that we know where to draw, and where the snakes and ladders are
     //i for row, this goes bottom to top where 0 is the bottom row and 7 is the top row
@@ -55,12 +68,17 @@ window.onload = function() {
     canvas = document.getElementById("boardCanvas");
     gc = canvas.getContext("2d");
     img = new Image();
-    img.src = "smaller_meeple_icon.png"
+    img.src = "smaller_meeple_icon.png";
     img.onload = function() {
         gc.drawImage(img, Space[0].xPos, Space[0].yPos);
     }
 
-
+    //Draw the other player at space 1 on the board
+    img2 = new Image();
+    img2.src = "small_dice_icon.png";
+    img2.onload = function() {
+        gc.drawImage(img2, Space[0].xPos, Space[0].yPos);
+    }
 }
 
 function Board_Space(xPosition, yPosition, Space_Num, Con_Space) {
@@ -71,11 +89,21 @@ function Board_Space(xPosition, yPosition, Space_Num, Con_Space) {
 }
 
 //This function will roll a 6 sided dice, and move the player's token to the correct position
-function rollDice()
-{
+function rollDice() {
     let win = null;
     let toptext = document.getElementById("top_text");
     let diceRoll = Math.floor(Math.random() * 6) + 1; //roll the dice
+    let oldPos = playerPos;
+    let preWarpPos = playerPos + diceRoll;
+    let didWarp = 0;
+    let rolled6 = 0;
+    if(diceRoll == 6) {
+        rolled6 = 1;
+    }
+    else {
+        hideButtons();
+    }
+        
     toptext.innerHTML = "You Rolled " + diceRoll;  //tell the player what they rolled
     console.log(diceRoll);
     playerPos += diceRoll; //update the player position
@@ -90,13 +118,159 @@ function rollDice()
 
     if(Space[playerPos].Connected_Space != null) {
         playerPos = Space[playerPos].Connected_Space;
+        didWarp = 1;
     }
 
     console.log("playerPos is " + playerPos);
 
-    //draw the player icon to the correct space
+    //draw the player's icons to the correct space
     gc.drawImage(img, Space[playerPos].xPos, Space[playerPos].yPos);
+    gc.drawImage(img2, Space[player2Pos].xPos, Space[player2Pos].yPos);
+    moveNumber++;
 
-    if(win == true)
-        toptext.innerHTML = "Congratulations you Win!";
+    //sendMove(playerName, moveNumber, oldPos+1, diceRoll, preWarpPos, didWarp, playerPos, rolled6);
+
+    if(win == true) {
+        if(playerName != null && playerName != "") {
+            toptext.style.color = "black";
+            toptext.innerHTML = "Congratulations " + playerName + ", You Win!"
+        }
+        else {
+            toptext.style.color = "black";
+            toptext.innerHTML = "Congratulations You Win!";
+        }
+    }
+
+    let msg = {
+        cid: clientNum,
+        pName: playerName,
+        clientRoll: diceRoll,
+        clientPos: playerPos,
+        client6: rolled6,
+        clientwin: win, 
+        text: "this is client " + clientNum + " sending a message" 
+    };
+
+    console.log("about to send message");
+    connection.send(JSON.stringify(msg));
 }
+
+//This function will reset the single player version of the game
+function newGame() {
+    playerPos = 0;
+    gc.clearRect(0, 0, 768, 768); //clear the screen
+    gc.drawImage(img, Space[0].xPos, Space[0].yPos);
+    let toptext = document.getElementById("top_text");
+    toptext.style.color = "black";
+    toptext.innerHTML = "Snakes and Ladders Single Player";
+}
+
+//This function handles the input of a username for the game
+function submitName() {
+    let toptext = document.getElementById("top_text");
+    let nameInput = document.getElementById("name_input_box");
+    //compare name input to regex string here
+    let newName = nameInput.value;
+    if(/^([a-z]|[A-Z]|[0-9]){1,10}$/.test(newName) == false || newName.toLowerCase().includes("drop")) {
+        nameInput.value = "";
+        toptext.style.color = "red";
+        toptext.innerHTML = "Invalid Name. Please create a name of length 10 or less using only numbers and letters. Do not attempt to inject SQL either (If you have drop in your name this will raise a flag)."
+    }
+    else {
+        playerName = newName;
+        nameInput.value = "";
+        toptext.style.color = "black";
+        toptext.innerHTML = "Hello " + playerName + "!";
+
+        //establish a connection with the server now that you have a name
+        //connect to the server
+        connection = new WebSocket(url);
+        connection.onopen = () => {
+            console.log("connection established");
+            connection.onmessage = (message) => {
+                if(clientNum == null) {
+                    clientNum = message.data;
+                    console.log("clientNum is " + clientNum);
+                }
+                else {
+                    //update the position of the other player
+                    let content = JSON.parse(message.data);
+                    toptext.innerHTML = content.pName + " rolled a " + content.clientRoll;
+                    player2Pos = content.clientPos;
+
+                    //redraw the screen
+                    gc.clearRect(0, 0, 768, 768); //clear the screen
+                    gc.drawImage(img, Space[playerPos].xPos, Space[playerPos].yPos); //draw player 1
+                    gc.drawImage(img2, Space[player2Pos].xPos, Space[player2Pos].yPos); //draw player 2
+
+                    if(content.client6 == "0") {
+                        revealButtons();
+                    }
+
+                    if(content.clientwin == true) {
+                        toptext.innerHTML = content.pName + " Won the Game!";
+                    }
+
+                    console.log(content.text);
+                }
+            };
+        };
+    }
+}
+
+function hideButtons() {
+    let buttons = document.getElementById("button_div");
+    buttons.style.display = "none";
+}
+
+function revealButtons() {
+    let buttons = document.getElementById("button_div");
+    buttons.style.display = "flex";
+}
+
+// //This function sends a post request containing move information to the server
+// function sendMove(pName, mNumber, oPos, dRoll, pWarpPos, dWarp, pPos, r6)
+// {
+//     let url = "http://localhost:3000";
+//     let dataToSend = {
+//         playerID: 37,
+//         player: pName,
+//         moveNumber: mNumber,
+//         currentSpace: oPos,
+//         rollResult: dRoll,
+//         resultingSpace: pWarpPos,
+//         didWarpMove: dWarp,
+//         finalSpace: pPos, 
+//         rolled6: r6
+//     };
+
+//     let fetchOptions = {
+//         method: 'POST',
+//         headers: {
+//             'Accept': 'application/json',
+//             'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify(dataToSend)
+//     };
+
+//     fetch(url, fetchOptions)
+//         .then(checkStatus)
+//         .then(function(responseText) {
+//             console.log(responseText);
+//         })
+//         .catch(function(error) {
+//         });
+// }
+
+// /**
+//  * This method handles slow responses from the server
+//  * @param {Promise} response
+//  */
+// function checkStatus(response) {
+//     if(response.status >= 200 && response.status < 300) {
+//         return response.text();
+//     }
+//     else {
+//         return Promise.reject(new Error(response.status + ": " + response.text));
+//     }
+// }
