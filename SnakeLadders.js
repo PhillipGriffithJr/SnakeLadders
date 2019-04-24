@@ -228,7 +228,7 @@ function sendMove(pName, didWin)
 {
     let url = "http://localhost:3000";
     let dataToSend = {
-        player: pName,
+        player: pName.toLowerCase(),
         win: didWin,
         numMoves: moveNumber
     };
