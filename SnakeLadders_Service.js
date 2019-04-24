@@ -72,17 +72,19 @@ WebSocketServer.on('connection', client => {
   * Will send data to the database for storage
   */
  app.post('/', jsonParser, function(req,res) {
-     let name = req.player;
-     let result = req.win;
-     let moves = req.moveNumber;
+     let name = req.body.player;
+     let result = req.body.win;
+     let moves = req.body.numMoves;
      let insert = null;
+
+     console.log(name);
 
      //the player won
      if(result == true) {
-         insert = "INSERT INTO playerStats (playerName, gamesWon, gamesPlayed, lastTimePlayed, moveHS) VALUES ('" + name + "', 1, 1, SYSDATE, " + moves + ") ON DUPLICATE KEY UPDATE gamesWon = gamesWon + 1, gamesPlayed = gamesPlayed + 1, lastTimePlayed = SYSDATE, moveHS = IF(" + moves + " < moveHS, " + moves + ", moveHS))";
+         insert = "INSERT INTO playerStats (playerName, gamesWon, gamesPlayed, lastTimePlayed, moveHS) VALUES ('" + name + "', 1, 1, CURDATE(), " + moves + ") ON DUPLICATE KEY UPDATE gamesWon = gamesWon + 1, gamesPlayed = gamesPlayed + 1, lastTimePlayed = CURDATE(), moveHS = IF(" + moves + " < moveHS, " + moves + ", moveHS)";
      }
      else {
-         insert = "INSERT INTO playerStats (playerName, gamesWon, gamesPlayed, lastTimePlayed) VALUES ('" + name + "', " + "0, 1, SYSDATE) ON DUPLICATE KEY UPDATE gamesPlayed = gamesPlayed + 1";
+         insert = "INSERT INTO playerStats (playerName, gamesWon, gamesPlayed, lastTimePlayed) VALUES ('" + name + "', " + "0, 1, CURDATE()) ON DUPLICATE KEY UPDATE gamesPlayed = gamesPlayed + 1";
      }
 
      //insert the result into the table

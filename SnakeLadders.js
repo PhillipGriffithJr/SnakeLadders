@@ -20,7 +20,8 @@ let moveNumber = 0;
 
 //Server Setup
 let clientNum = null;
-let url = "ws://ec2-52-90-168-24.compute-1.amazonaws.com:8080";
+// let url = "ws://ec2-52-90-168-24.compute-1.amazonaws.com:8080";
+let url = "ws://localhost:8080";
 let connection = null;
 
 window.onload = function() {
@@ -93,9 +94,9 @@ function rollDice() {
     let win = null;
     let toptext = document.getElementById("top_text");
     let diceRoll = Math.floor(Math.random() * 6) + 1; //roll the dice
-    // let oldPos = playerPos;
-    // let preWarpPos = playerPos + diceRoll;
-    // let didWarp = 0;
+    let oldPos = playerPos;
+    let preWarpPos = playerPos + diceRoll;
+    let didWarp = 0;
     let rolled6 = 0;
     if(diceRoll == 6) {
         rolled6 = 1;
@@ -132,7 +133,7 @@ function rollDice() {
         toptext.style.color = "black";
         toptext.innerHTML = "Congratulations " + playerName + ", You Win!"
 
-        sendMove(playerName, true);
+        sendMove(true);
     }
 
     let msg = {
@@ -168,7 +169,7 @@ function submitName() {
     if(/^([a-z]|[A-Z]|[0-9]){1,10}$/.test(newName) == false || newName.toLowerCase().includes("drop")) {
         nameInput.value = "";
         toptext.style.color = "red";
-        toptext.innerHTML = "Invalid Name. Please create a name of length 10 or less using only numbers and letters. Do not attempt to inject SQL either (If you have drop in your name this will raise a flag)."
+        toptext.innerHTML = "Invalid Name. Please create a name of length 10 or less using only numbers and letters and no spaces. Do not attempt to inject SQL either (If you have drop in your name this will raise a flag)."
     }
     else {
         playerName = newName;
@@ -203,7 +204,7 @@ function submitName() {
 
                     if(content.clientwin == true) {
                         toptext.innerHTML = content.pName + " Won the Game!";
-                        sendMove(playerName, false);
+                        sendMove(false);
                     }
 
                     console.log(content.text);
@@ -224,11 +225,12 @@ function revealButtons() {
 }
 
 //This function sends a post request containing move information to the server
-function sendMove(pName, didWin)
+function sendMove(didWin)
 {
+    let lowerName = playerName.toLowerCase();
     let url = "http://localhost:3000";
     let dataToSend = {
-        player: pName.toLowerCase(),
+        player: lowerName,
         win: didWin,
         numMoves: moveNumber
     };
