@@ -93,9 +93,9 @@ function rollDice() {
     let win = null;
     let toptext = document.getElementById("top_text");
     let diceRoll = Math.floor(Math.random() * 6) + 1; //roll the dice
-    let oldPos = playerPos;
-    let preWarpPos = playerPos + diceRoll;
-    let didWarp = 0;
+    // let oldPos = playerPos;
+    // let preWarpPos = playerPos + diceRoll;
+    // let didWarp = 0;
     let rolled6 = 0;
     if(diceRoll == 6) {
         rolled6 = 1;
@@ -128,17 +128,11 @@ function rollDice() {
     gc.drawImage(img2, Space[player2Pos].xPos, Space[player2Pos].yPos);
     moveNumber++;
 
-    //sendMove(playerName, moveNumber, oldPos+1, diceRoll, preWarpPos, didWarp, playerPos, rolled6);
-
     if(win == true) {
-        if(playerName != null && playerName != "") {
-            toptext.style.color = "black";
-            toptext.innerHTML = "Congratulations " + playerName + ", You Win!"
-        }
-        else {
-            toptext.style.color = "black";
-            toptext.innerHTML = "Congratulations You Win!";
-        }
+        toptext.style.color = "black";
+        toptext.innerHTML = "Congratulations " + playerName + ", You Win!"
+
+        sendMove(playerName, true);
     }
 
     let msg = {
@@ -209,6 +203,7 @@ function submitName() {
 
                     if(content.clientwin == true) {
                         toptext.innerHTML = content.pName + " Won the Game!";
+                        sendMove(playerName, false);
                     }
 
                     console.log(content.text);
@@ -228,49 +223,43 @@ function revealButtons() {
     buttons.style.display = "flex";
 }
 
-// //This function sends a post request containing move information to the server
-// function sendMove(pName, mNumber, oPos, dRoll, pWarpPos, dWarp, pPos, r6)
-// {
-//     let url = "http://localhost:3000";
-//     let dataToSend = {
-//         playerID: 37,
-//         player: pName,
-//         moveNumber: mNumber,
-//         currentSpace: oPos,
-//         rollResult: dRoll,
-//         resultingSpace: pWarpPos,
-//         didWarpMove: dWarp,
-//         finalSpace: pPos, 
-//         rolled6: r6
-//     };
+//This function sends a post request containing move information to the server
+function sendMove(pName, didWin)
+{
+    let url = "http://localhost:3000";
+    let dataToSend = {
+        player: pName,
+        win: didWin,
+        numMoves: moveNumber
+    };
 
-//     let fetchOptions = {
-//         method: 'POST',
-//         headers: {
-//             'Accept': 'application/json',
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify(dataToSend)
-//     };
+    let fetchOptions = {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+    };
 
-//     fetch(url, fetchOptions)
-//         .then(checkStatus)
-//         .then(function(responseText) {
-//             console.log(responseText);
-//         })
-//         .catch(function(error) {
-//         });
-// }
+    fetch(url, fetchOptions)
+        .then(checkStatus)
+        .then(function(responseText) {
+            console.log(responseText);
+        })
+        .catch(function(error) {
+        });
+}
 
-// /**
-//  * This method handles slow responses from the server
-//  * @param {Promise} response
-//  */
-// function checkStatus(response) {
-//     if(response.status >= 200 && response.status < 300) {
-//         return response.text();
-//     }
-//     else {
-//         return Promise.reject(new Error(response.status + ": " + response.text));
-//     }
-// }
+/**
+ * This method handles slow responses from the server
+ * @param {Promise} response
+ */
+function checkStatus(response) {
+    if(response.status >= 200 && response.status < 300) {
+        return response.text();
+    }
+    else {
+        return Promise.reject(new Error(response.status + ": " + response.text));
+    }
+}

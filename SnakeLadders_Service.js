@@ -10,20 +10,20 @@
  //The following code sets up the service to connect to the database
  //and for it to accept requests from the client and complete requests
  //on behalf of the client
-//  let mysql = require('mysql');
+ let mysql = require('mysql');
 
-//  let con = mysql.createConnection({
-//      host: "mydbinstance.c6iimmll2gpn.us-east-1.rds.amazonaws.com",
-//      database: "GameLS",
-//      user: "masteruser",
-//      password: "p455w0rd",
-//      debug: "true"
-//  });
+ let con = mysql.createConnection({
+     host: "mydbinstance.c6iimmll2gpn.us-east-1.rds.amazonaws.com",
+     database: "GameLS",
+     user: "masteruser",
+     password: "p455w0rd",
+     debug: "true"
+ });
 
-//  con.connect(function(err) {
-//     if(err) throw err;
-//     console.log("connected!");
-//  });
+ con.connect(function(err) {
+    if(err) throw err;
+    console.log("connected!");
+ });
 
  let express = require("express");
  const app = express();
@@ -72,32 +72,25 @@ WebSocketServer.on('connection', client => {
   * Will send data to the database for storage
   */
  app.post('/', jsonParser, function(req,res) {
-     let playerID = req.body.playerID;
-     let player = req.body.playerName;
-     let moveNumber = req.body.moveNumber;
-     let currentSpace = req.body.currentSpace;
-     let rollResult = req.body.rollResult;
-     let resultingSpace = req.body.resultingSpace;
-     let didWarpMove = req.body.didWarpMove;
-     let finalSpace = req.body.finalSpace;
-     let rolled6 = req.body.rolled6;
+     let name = req.player;
+     let result = req.win;
+     let moves = req.moveNumber;
+     let insert = null;
 
-     let insertQuery = "INSERT INTO Moves (playerID, player, moveNumber, currentSpace, rollResult, resultingSpace, didWarpMove, finalSpace, rolled6) VALUES (" + playerID + ", '" + player + "', " + moveNumber + ", " + currentSpace + ", " + rollResult + ", " + resultingSpace + ", " + didWarpMove + ", " + finalSpace + ", " + rolled6 + ")";
+     //the player won
+     if(result == true) {
+         insert = "INSERT INTO playerStats (playerName, gamesWon, gamesPlayed, lastTimePlayed, moveHS) VALUES ('" + name + "', 1, 1, SYSDATE, " + moves + ") ON DUPLICATE KEY UPDATE gamesWon = gamesWon + 1, gamesPlayed = gamesPlayed + 1, lastTimePlayed = SYSDATE, moveHS = IF(" + moves + " < moveHS, " + moves + ", moveHS))";
+     }
+     else {
+         insert = "INSERT INTO playerStats (playerName, gamesWon, gamesPlayed, lastTimePlayed) VALUES ('" + name + "', " + "0, 1, SYSDATE) ON DUPLICATE KEY UPDATE gamesPlayed = gamesPlayed + 1";
+     }
 
-     //insert the move into the table
-     con.query(insertQuery, function(err, result) {
+     //insert the result into the table
+     con.query(insert, function(err, result) {
         if(err) throw err;
 
         res.send("Move Insertion Complete");
      });
- });
-
- /**
-  * Handles get requests from the client.
-  * Will fetch data from the database to send to the client
-  */
- app.get('/', function(req,res) {
-    //Get Code Here
  });
 
  app.listen(3000);
