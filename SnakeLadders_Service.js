@@ -17,6 +17,7 @@
      database: "GameLS",
      user: "masteruser",
      password: "p455w0rd",
+     port: "3306",
      debug: "true"
  });
 

@@ -20,8 +20,8 @@ let moveNumber = 0;
 
 //Server Setup
 let clientNum = null;
-// let url = "ws://ec2-52-90-168-24.compute-1.amazonaws.com:8080";
-let url = "ws://localhost:8080";
+let url = "ws://ec2-3-85-217-18.compute-1.amazonaws.com:8080";
+// let url = "ws://localhost:8080";
 let connection = null;
 
 window.onload = function() {
@@ -228,7 +228,7 @@ function revealButtons() {
 function sendMove(didWin)
 {
     let lowerName = playerName.toLowerCase();
-    let url = "http://localhost:3000";
+    let url = "http://ec2-3-85-217-18.compute-1.amazonaws.com:3000";
     let dataToSend = {
         player: lowerName,
         win: didWin,
