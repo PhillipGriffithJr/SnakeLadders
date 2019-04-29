@@ -11,7 +11,12 @@ While the code is set up to send data to a database we did not end up using it f
 The clients share state by sending a message to one another when the state changes. The message is sent through the server to the other
 client. As of now the game only supports two players.
 The New Game button currently resets the board but does not reset state between players. This is a work in progress function.
-In the future there are many features that can be added (i.e Scaling out to more than 2 players, distinct instances of the game, 
-use of the database to update leaderboards, modular rulesets, distinct single and multiplayer modes etc). 
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+Second Iteration
+
+We have added homepage which queries a mysql database. This homepage acts as a leader board
+of sorts. At the end of a game, the results are added to the database.
 
 Thanks for reading! 
