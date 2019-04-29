@@ -6,7 +6,7 @@ setuptable();
 
 function setuptable(){
 	let table_area = document.getElementById("table_area");
-	let url = "http://localhost:3000/";
+	let url = "ec2-3-94-53-192.compute-1.amazonaws.com:3000";
 
 //query the database
 fetch(url)
@@ -37,7 +37,7 @@ fetch(url)
 		newTable.appendChild(headerRow); 
 
 		//create rows of table
-		for (let i = 0; i<json.length; i++){
+		for (let i = 0; i<json.length; i++) {
 			//create a new row and the data for that row
 			let newRow = document.createElement("tr");
 			let data1 = document.createElement("td");
